@@ -12,37 +12,104 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.todolist.data.TodoDatabaseProvider
+import com.example.todolist.data.TodoRepository
+import com.example.todolist.data.TodoRepositoryImpl
+import com.example.todolist.ui.UiEvent
 import com.example.todolist.ui.theme.ToDoListTheme
 
 @Composable
-fun AddEditScreen(modifier: Modifier = Modifier) {
-    AddEditContent()
+fun AddEditScreen(
+    navigateBack: () -> Unit,
+) {
+    val context = LocalContext.current.applicationContext
+    val database = TodoDatabaseProvider.provide(context)
+    val repository = TodoRepositoryImpl(
+        dao = TodoDatabaseProvider
+            .provide(context).todoDao
+    )
+    val viewModel = viewModel<AddEditViewModel> {
+        AddEditViewModel(repository = repository)
+    }
+
+    val title = viewModel.title
+    val description = viewModel.description
+
+    val snackBarHostState = remember {
+        SnackbarHostState()
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { uiEvent ->
+            when (uiEvent) {
+                is UiEvent.Navigate<*> -> {
+
+                }
+                UiEvent.NavigateBack -> {
+                    navigateBack()
+
+                }
+                is UiEvent.ShowSnackBar -> {
+                    snackBarHostState.showSnackbar(
+                        message = uiEvent.message,
+                    )
+                }
+            }
+        }
+    }
+
+    AddEditContent(
+        title = title,
+        description = description,
+        snackBarHostState = snackBarHostState,
+        onEvent = viewModel::onEvent,
+    )
 }
 
 @Composable
-fun AddEditContent() {
+fun AddEditContent(
+    title: String,
+    description: String?,
+    snackBarHostState: SnackbarHostState,
+    onEvent: (AddEditEvent) -> Unit,
+) {
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = { }) {
+            FloatingActionButton(onClick = {
+                onEvent(AddEditEvent.Save)
+            }) {
                 Icon(Icons.Default.Check, contentDescription = "Save")
             }
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackBarHostState)
         }
-    ) {
+    ) { paddingValues ->
         Column(
             modifier = Modifier
-                .consumeWindowInsets(it)
+                .consumeWindowInsets(paddingValues)
                 .padding(16.dp)
         ) {
             OutlinedTextField(
                 modifier = Modifier
                 .fillMaxWidth(),
-                value = "",
-                onValueChange = {},
+                value = title,
+                onValueChange = {
+                    onEvent(
+                        AddEditEvent.TitleChanged(it)
+                    )
+                },
                 placeholder = {
                     Text(text = "Title")
                 }
@@ -53,8 +120,12 @@ fun AddEditContent() {
             OutlinedTextField(
                 modifier = Modifier
                     .fillMaxWidth(),
-                value = "",
-                onValueChange = {},
+                value = description ?: "",
+                onValueChange = {
+                    onEvent(
+                        AddEditEvent.DescriptionChanged(it)
+                    )
+                },
                 placeholder = {
                     Text(text = "Description (optional)")
                 }
@@ -67,6 +138,11 @@ fun AddEditContent() {
 @Composable
 private fun AddEditContentPreview() {
     ToDoListTheme() {
-        AddEditContent()
+        AddEditContent(
+            title = "",
+            description = null,
+            snackBarHostState = SnackbarHostState(),
+            onEvent = {}
+        )
     }
 }
