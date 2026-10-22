@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version libs.versions.kotlin
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -47,7 +48,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.navigation.runtime.ktx)
-    implementation(libs.androidx.room.common)
     implementation(libs.androidx.room3.runtime)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -59,5 +59,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     implementation(libs.kotlinx.serialization.json)
     implementation("androidx.navigation:navigation-compose:2.9.6")
+    ksp(libs.androidx.room3.compiler)
 
 }
