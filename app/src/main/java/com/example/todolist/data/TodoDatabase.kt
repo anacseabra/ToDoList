@@ -1,7 +1,7 @@
 package com.example.todolist.data
 
 import android.content.Context
-import androidx.room.Database
+import androidx.room3.Database
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 
